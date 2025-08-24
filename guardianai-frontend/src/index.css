@@ -1,0 +1,15 @@
+:root {
+  --gold: #D4AF37;
+  --black: #02040a;
+  --dark-blue: #0d1b3e;
+  --light-text: #e6e6e6;
+  --dark-text: #111111;
+}
+
+body {
+  margin: 0;
+  font-family: 'Roboto Mono', monospace; /* Default font for typewriter */
+  background-color: var(--black);
+  color: var(--light-text);
+  overflow-x: hidden;
+}

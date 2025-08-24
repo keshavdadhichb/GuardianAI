@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Action Recognition Tester</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@3.0.0/dist/mobilenet.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap');
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        h1, h2 { color: #00AFFF; }
+        .container {
+            display: flex;
+            gap: 30px;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 20px;
+        }
+        .video-container, .results-container {
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #333;
+            flex: 1;
+        }
+        video {
+            width: 100%;
+            border-radius: 8px;
+            max-height: 400px;
+        }
+        #file-input { display: none; }
+        .upload-btn {
+            display: inline-block;
+            background-color: #00AFFF;
+            color: #111;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        #predictions {
+            font-family: 'Roboto Mono', monospace;
+            list-style: none;
+            padding: 0;
+        }
+        #predictions li {
+            background-color: #2a2a2a;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        #status {
+            font-style: italic;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+    <h1>Real-time Video Action Recognition</h1>
+    
+    <label for="file-input" class="upload-btn">Choose a Video File</label>
+    <input type="file" id="file-input" accept="video/*">
+
+    <div class="container">
+        <div class="video-container">
+            <h2>Video Preview</h2>
+            <video id="video-player" controls muted></video>
+            <p id="status">Please select a video file to begin analysis.</p>
+        </div>
+        <div class="results-container">
+            <h2>Live Predictions</h2>
+            <ul id="predictions"></ul>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video-player');
+        const fileInput = document.getElementById('file-input');
+        const predictionsList = document.getElementById('predictions');
+        const statusEl = document.getElementById('status');
+        let model;
+
+        // --- 2. Load the Pre-trained Model ---
+        async function loadModel() {
+            statusEl.innerText = 'Loading AI model... (this may take a moment)';
+            // This example uses MobileNet, a fast image classifier, to analyze frames.
+            // A true action recognition model like SlowFast is more complex to run client-side.
+            model = await mobilenet.load();
+            statusEl.innerText = 'Model loaded. Ready for analysis.';
+            console.log('Model loaded successfully');
+        }
+
+        // --- 3. Handle Video File Selection ---
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                video.src = url;
+                video.style.display = 'block';
+                video.play();
+                statusEl.innerText = 'Analyzing video...';
+            }
+        });
+
+        // --- 4. Continuously Analyze Video Frames ---
+        async function predictFrame() {
+            if (model && !video.paused && !video.ended) {
+                const predictions = await model.classify(video);
+                displayPredictions(predictions);
+            }
+            requestAnimationFrame(predictFrame);
+        }
+        
+        // --- 5. Display the Results ---
+        function displayPredictions(predictions) {
+            predictionsList.innerHTML = ''; // Clear previous results
+            predictions.forEach(p => {
+                const li = document.createElement('li');
+                const probability = (p.probability * 100).toFixed(2);
+                li.innerText = `${p.className} - ${probability}% confidence`;
+                predictionsList.appendChild(li);
+            });
+        }
+
+        // --- Start Everything ---
+        loadModel();
+        video.addEventListener('play', () => {
+            requestAnimationFrame(predictFrame);
+        });
+
+    </script>
+</body>
+</html>
